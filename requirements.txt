@@ -1,0 +1,7 @@
+instaloader
+python-dotenv
+requests[socks]
+Flask==3.0.3
+gunicorn==22.0.0
+pyTelegramBotAPI==4.30.0
+gallery-dl
