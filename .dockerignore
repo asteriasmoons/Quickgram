@@ -1,0 +1,12 @@
+node_modules
+miniapp/node_modules
+dist
+miniapp/dist
+.env
+.git
+__pycache__
+venv
+.cache
+nohup.out
+session
+instagram_response.json

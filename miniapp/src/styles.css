@@ -1,0 +1,348 @@
+:root {
+  color-scheme: dark;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  background: #101115;
+  color: #f7f2ec;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  background:
+    radial-gradient(circle at 20% -10%, rgba(255, 126, 82, 0.24), transparent 34rem),
+    radial-gradient(circle at 110% 18%, rgba(86, 154, 255, 0.18), transparent 28rem),
+    #101115;
+}
+
+button {
+  font: inherit;
+}
+
+.app-shell {
+  min-height: 100svh;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: max(18px, env(safe-area-inset-top)) 16px
+    calc(98px + env(safe-area-inset-bottom));
+}
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.home-hero {
+  min-height: 46svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 16px;
+  padding: 30px 4px;
+}
+
+.brand-mark {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #ff845d, #ffe06d 55%, #5ca6ff);
+  color: #15110d;
+  font-size: 30px;
+  font-weight: 900;
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.28);
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+.home-hero h1,
+.page-header h1 {
+  font-size: clamp(36px, 11vw, 58px);
+  line-height: 0.95;
+  letter-spacing: 0;
+}
+
+.home-hero p,
+.page-header p,
+.telegram-warning,
+.empty-state p {
+  color: rgba(247, 242, 236, 0.72);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.primary-action {
+  width: fit-content;
+  min-height: 48px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 22px;
+  background: #f7f2ec;
+  color: #141414;
+  font-weight: 800;
+}
+
+.home-steps,
+.download-card,
+.empty-state,
+.loading-card,
+.error-card {
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(18px);
+}
+
+.home-steps {
+  display: grid;
+  gap: 0;
+  overflow: hidden;
+}
+
+.home-steps article {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 4px 12px;
+  padding: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.home-steps article:last-child {
+  border-bottom: 0;
+}
+
+.home-steps span {
+  grid-row: span 2;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(255, 132, 93, 0.18);
+  color: #ffb091;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.home-steps strong {
+  color: #fff8f2;
+  font-size: 15px;
+}
+
+.home-steps p,
+.caption,
+.download-header span {
+  color: rgba(247, 242, 236, 0.64);
+  font-size: 13px;
+  line-height: 1.42;
+}
+
+.telegram-warning {
+  padding: 0 4px;
+}
+
+.page-header {
+  padding: 18px 4px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.download-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.download-card {
+  padding: 12px;
+}
+
+.download-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 2px 12px;
+}
+
+.download-header div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.download-header strong {
+  overflow: hidden;
+  color: #fff8f2;
+  font-size: 15px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.media-count {
+  min-width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.11);
+  font-weight: 800;
+}
+
+.media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 148px), 1fr));
+  gap: 8px;
+}
+
+.media-frame {
+  overflow: hidden;
+  aspect-ratio: 1 / 1.18;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.34);
+}
+
+.media-frame img,
+.media-frame video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.caption {
+  display: -webkit-box;
+  margin-top: 12px;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.empty-state,
+.loading-card,
+.error-card {
+  padding: 22px;
+}
+
+.empty-state {
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.empty-icon {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  background: rgba(92, 166, 255, 0.18);
+  color: #9fc9ff;
+  font-size: 30px;
+  font-weight: 300;
+}
+
+.empty-state h2 {
+  color: #fff8f2;
+  font-size: 26px;
+  line-height: 1.05;
+}
+
+.loading-card {
+  color: rgba(247, 242, 236, 0.74);
+}
+
+.error-card {
+  border-color: rgba(255, 123, 109, 0.35);
+  color: #ffb8ae;
+}
+
+.bottom-nav {
+  position: fixed;
+  right: 14px;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  left: 14px;
+  z-index: 10;
+  max-width: 680px;
+  height: 72px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin: 0 auto;
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(16, 17, 21, 0.86);
+  box-shadow: 0 22px 64px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(22px);
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(247, 242, 236, 0.62);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.nav-icon {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  background: currentColor;
+  mask: var(--icon-url) center / contain no-repeat;
+  -webkit-mask: var(--icon-url) center / contain no-repeat;
+}
+
+.nav-item.active {
+  background: #f7f2ec;
+  color: #141414;
+}
+
+@media (min-width: 680px) {
+  .app-shell {
+    padding-inline: 22px;
+  }
+
+  .home-steps {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .home-steps article {
+    border-right: 1px solid rgba(255, 255, 255, 0.09);
+    border-bottom: 0;
+  }
+
+  .home-steps article:last-child {
+    border-right: 0;
+  }
+}

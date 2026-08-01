@@ -1,6 +1,10 @@
 # ignored folders
 __pycache__/
 venv/
+node_modules/
+dist/
+miniapp/node_modules/
+miniapp/dist/
 
 # ignored files
 .env
@@ -9,3 +13,5 @@ test.py
 nohup.out
 session
 instagram_response.json
+npm-debug.log*
+*.tsbuildinfo
