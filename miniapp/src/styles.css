@@ -252,6 +252,107 @@ p {
   gap: 14px;
 }
 
+.album-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+  gap: 14px;
+}
+
+.album-card {
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.22);
+  padding: 0;
+  color: #f7f2ec;
+  text-align: left;
+  backdrop-filter: blur(18px);
+}
+
+.album-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 3px;
+  aspect-ratio: 1.45 / 1;
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.album-preview-frame {
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.36);
+}
+
+.album-preview-frame img,
+.album-preview-frame video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.album-card-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px;
+}
+
+.album-card-body div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.album-card-body strong {
+  overflow: hidden;
+  font-size: 18px;
+  line-height: 1.05;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.album-card-body span {
+  color: rgba(247, 242, 236, 0.64);
+  font-size: 12px;
+}
+
+.album-count {
+  min-height: 30px;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0 10px;
+  background: rgba(255, 255, 255, 0.11);
+  color: #fff8f2 !important;
+  font-size: 12px !important;
+}
+
+.back-button,
+.load-more-button {
+  min-height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  padding: 0 16px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f7f2ec;
+}
+
+.back-button {
+  width: fit-content;
+}
+
+.load-more-button {
+  width: 100%;
+}
+
+.load-more-button:disabled {
+  opacity: 0.6;
+}
+
 .download-card {
   padding: 12px;
 }

@@ -7,7 +7,9 @@ import { buildCaption } from "../bot/caption.js";
 import { deliverInstagramMediaToChat } from "../bot/mediaDelivery.js";
 import {
   findOwnedMedia,
+  listLibraryDateAlbums,
   listLibraryDownloads,
+  listLibraryDownloadsForDate,
   saveDownload
 } from "../db/libraryRepository.js";
 import { hasDatabaseConfig } from "../db/pool.js";
@@ -41,6 +43,31 @@ function authenticateMiniApp(request: Request): number {
 function requestUrl(request: Request): string | null {
   const body = request.body as { url?: unknown } | undefined;
   return typeof body?.url === "string" ? body.url.trim() : null;
+}
+
+function queryString(request: Request, name: string, fallback: string): string {
+  const value = request.query[name];
+  return typeof value === "string" && value.trim() ? value.trim() : fallback;
+}
+
+function queryInteger(
+  request: Request,
+  name: string,
+  fallback: number,
+  max: number
+): number {
+  const value = request.query[name];
+  const parsed = typeof value === "string" ? Number(value) : NaN;
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    return fallback;
+  }
+  return Math.min(parsed, max);
+}
+
+function mediaUrlBuilder(request: Request): (mediaId: string) => string {
+  const initData = initDataFromRequest(request) ?? "";
+  return (mediaId) =>
+    `/api/miniapp/media/${mediaId}?initData=${encodeURIComponent(initData)}`;
 }
 
 function sendAuthError(response: Response, error: unknown): void {
@@ -174,6 +201,86 @@ export function createMiniAppRouter(bot: Bot): Router {
     );
 
     response.json({ ok: true, downloads });
+  });
+
+  router.get("/library/albums", async (request, response) => {
+    if (!hasDatabaseConfig()) {
+      response.status(503).json({
+        ok: false,
+        error: "DATABASE_URL is not configured."
+      });
+      return;
+    }
+
+    let telegramUserId: number;
+    try {
+      telegramUserId = authenticateMiniApp(request);
+    } catch (error) {
+      sendAuthError(response, error);
+      return;
+    }
+
+    const timezone = queryString(request, "timezone", "UTC");
+    const limit = queryInteger(request, "limit", 30, 60);
+    const offset = queryInteger(request, "offset", 0, 5_000);
+    const albums = await listLibraryDateAlbums(
+      telegramUserId,
+      timezone,
+      limit,
+      offset,
+      mediaUrlBuilder(request)
+    );
+
+    response.json({
+      ok: true,
+      albums,
+      hasMore: albums.length === limit
+    });
+  });
+
+  router.get("/library/albums/:dateKey", async (request, response) => {
+    if (!hasDatabaseConfig()) {
+      response.status(503).json({
+        ok: false,
+        error: "DATABASE_URL is not configured."
+      });
+      return;
+    }
+
+    let telegramUserId: number;
+    try {
+      telegramUserId = authenticateMiniApp(request);
+    } catch (error) {
+      sendAuthError(response, error);
+      return;
+    }
+
+    const dateKey = request.params.dateKey;
+    if (!dateKey || !/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) {
+      response.status(400).json({
+        ok: false,
+        error: "Invalid library date."
+      });
+      return;
+    }
+
+    const timezone = queryString(request, "timezone", "UTC");
+    const limit = queryInteger(request, "limit", 20, 50);
+    const offset = queryInteger(request, "offset", 0, 5_000);
+    const downloads = await listLibraryDownloadsForDate(
+      telegramUserId,
+      timezone,
+      dateKey,
+      limit,
+      offset,
+      mediaUrlBuilder(request)
+    );
+
+    response.json({
+      ok: true,
+      downloads,
+      hasMore: downloads.length === limit
+    });
   });
 
   router.get("/media/:mediaId", async (request, response) => {

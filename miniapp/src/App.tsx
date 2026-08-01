@@ -5,9 +5,19 @@ import {
   type CSSProperties,
   type FormEvent
 } from "react";
-import { downloadInstagramUrl, fetchLibrary, telegramInitData } from "./api";
+import {
+  downloadInstagramUrl,
+  fetchLibraryAlbums,
+  fetchLibraryDateDownloads,
+  telegramInitData
+} from "./api";
 import { navItems } from "./nav";
-import type { LibraryDownload, LibraryMediaItem, TabId } from "./types";
+import type {
+  LibraryDateAlbum,
+  LibraryDownload,
+  LibraryMediaItem,
+  TabId
+} from "./types";
 import "./styles.css";
 
 function formatDate(value: string): string {
@@ -17,6 +27,27 @@ function formatDate(value: string): string {
     hour: "numeric",
     minute: "2-digit"
   }).format(new Date(value));
+}
+
+function formatAlbumDate(dateKey: string): string {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  const date = new Date(year ?? 0, (month ?? 1) - 1, day ?? 1);
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+
+  if (date.toDateString() === today.toDateString()) {
+    return "Today";
+  }
+  if (date.toDateString() === yesterday.toDateString()) {
+    return "Yesterday";
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: "long",
+    day: "numeric",
+    year: "numeric"
+  }).format(date);
 }
 
 function HomePage({ onOpenLibrary }: { onOpenLibrary: () => void }) {
@@ -126,6 +157,39 @@ function EmptyLibrary() {
       <h2>Your Library is waiting</h2>
       <p>Downloads will appear here after the bot successfully sends them to you.</p>
     </section>
+  );
+}
+
+function AlbumCard({
+  album,
+  onOpen
+}: {
+  album: LibraryDateAlbum;
+  onOpen: (album: LibraryDateAlbum) => void;
+}) {
+  return (
+    <button className="album-card" type="button" onClick={() => onOpen(album)}>
+      <div className="album-preview-grid">
+        {album.previewMedia.map((media) => (
+          <div className="album-preview-frame" key={media.id}>
+            {media.mediaType === "video" ? (
+              <video src={media.url} preload="metadata" playsInline />
+            ) : (
+              <img src={media.url} alt="" />
+            )}
+          </div>
+        ))}
+      </div>
+      <div className="album-card-body">
+        <div>
+          <strong>{formatAlbumDate(album.dateKey)}</strong>
+          <span>{formatDate(album.latestAt)}</span>
+        </div>
+        <span className="album-count">
+          {album.mediaCount} item{album.mediaCount === 1 ? "" : "s"}
+        </span>
+      </div>
+    </button>
   );
 }
 
@@ -251,21 +315,27 @@ function LibraryMedia({
 }
 
 function LibraryPage() {
+  const [albums, setAlbums] = useState<LibraryDateAlbum[]>([]);
+  const [selectedAlbum, setSelectedAlbum] = useState<LibraryDateAlbum | null>(null);
   const [downloads, setDownloads] = useState<LibraryDownload[]>([]);
   const [selectedMedia, setSelectedMedia] = useState<LibraryMediaItem | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMoreAlbums, setHasMoreAlbums] = useState(false);
+  const [hasMoreDownloads, setHasMoreDownloads] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
-    async function loadLibrary() {
+    async function loadAlbums() {
       setLoading(true);
       setError(null);
       try {
-        const nextDownloads = await fetchLibrary();
+        const result = await fetchLibraryAlbums();
         if (!cancelled) {
-          setDownloads(nextDownloads);
+          setAlbums(result.albums);
+          setHasMoreAlbums(result.hasMore);
         }
       } catch (loadError) {
         if (!cancelled) {
@@ -278,24 +348,111 @@ function LibraryPage() {
       }
     }
 
-    void loadLibrary();
+    void loadAlbums();
 
     return () => {
       cancelled = true;
     };
   }, []);
 
+  async function openAlbum(album: LibraryDateAlbum) {
+    setSelectedAlbum(album);
+    setDownloads([]);
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await fetchLibraryDateDownloads(album.dateKey);
+      setDownloads(result.downloads);
+      setHasMoreDownloads(result.hasMore);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Unable to load album.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadMoreAlbums() {
+    setLoadingMore(true);
+    setError(null);
+    try {
+      const result = await fetchLibraryAlbums(albums.length);
+      setAlbums((current) => [...current, ...result.albums]);
+      setHasMoreAlbums(result.hasMore);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Unable to load more albums.");
+    } finally {
+      setLoadingMore(false);
+    }
+  }
+
+  async function loadMoreDownloads() {
+    if (!selectedAlbum) {
+      return;
+    }
+    setLoadingMore(true);
+    setError(null);
+    try {
+      const result = await fetchLibraryDateDownloads(
+        selectedAlbum.dateKey,
+        downloads.length
+      );
+      setDownloads((current) => [...current, ...result.downloads]);
+      setHasMoreDownloads(result.hasMore);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Unable to load more media.");
+    } finally {
+      setLoadingMore(false);
+    }
+  }
+
   return (
     <main className="page library-page">
       <header className="page-header">
-        <h1>Library</h1>
-        <p>Photos and videos the bot has delivered to you.</p>
+        {selectedAlbum && (
+          <button
+            className="back-button"
+            type="button"
+            onClick={() => {
+              setSelectedAlbum(null);
+              setDownloads([]);
+              setError(null);
+            }}
+          >
+            Library
+          </button>
+        )}
+        <h1>{selectedAlbum ? formatAlbumDate(selectedAlbum.dateKey) : "Library"}</h1>
+        <p>
+          {selectedAlbum
+            ? `${selectedAlbum.mediaCount} photos and videos from this date.`
+            : "Photos and videos grouped by download date."}
+        </p>
       </header>
 
       {loading && <div className="loading-card">Loading your Library...</div>}
       {error && <div className="error-card">{error}</div>}
-      {!loading && !error && downloads.length === 0 && <EmptyLibrary />}
-      {!loading && !error && downloads.length > 0 && (
+      {!loading && !error && !selectedAlbum && albums.length === 0 && <EmptyLibrary />}
+      {!loading && !error && !selectedAlbum && albums.length > 0 && (
+        <section className="album-list">
+          {albums.map((album) => (
+            <AlbumCard key={album.dateKey} album={album} onOpen={openAlbum} />
+          ))}
+          {hasMoreAlbums && (
+            <button
+              className="load-more-button"
+              type="button"
+              disabled={loadingMore}
+              onClick={loadMoreAlbums}
+            >
+              {loadingMore ? "Loading..." : "Load More"}
+            </button>
+          )}
+        </section>
+      )}
+      {!loading && !error && selectedAlbum && downloads.length === 0 && (
+        <EmptyLibrary />
+      )}
+      {!loading && !error && selectedAlbum && downloads.length > 0 && (
         <section className="download-list">
           {downloads.map((download) => (
             <LibraryMedia
@@ -304,6 +461,16 @@ function LibraryPage() {
               onSelectMedia={setSelectedMedia}
             />
           ))}
+          {hasMoreDownloads && (
+            <button
+              className="load-more-button"
+              type="button"
+              disabled={loadingMore}
+              onClick={loadMoreDownloads}
+            >
+              {loadingMore ? "Loading..." : "Load More"}
+            </button>
+          )}
         </section>
       )}
 

@@ -1,4 +1,4 @@
-import type { LibraryDownload } from "./types";
+import type { LibraryDateAlbum, LibraryDownload } from "./types";
 
 interface LibraryResponse {
   ok: boolean;
@@ -10,6 +10,20 @@ interface DownloadResponse {
   ok: boolean;
   shortcode?: string;
   deliveredCount?: number;
+  error?: string;
+}
+
+interface AlbumsResponse {
+  ok: boolean;
+  albums?: LibraryDateAlbum[];
+  hasMore?: boolean;
+  error?: string;
+}
+
+interface DateDownloadsResponse {
+  ok: boolean;
+  downloads?: LibraryDownload[];
+  hasMore?: boolean;
   error?: string;
 }
 
@@ -59,6 +73,80 @@ export async function fetchLibrary(): Promise<LibraryDownload[]> {
   }
 
   return payload.downloads ?? [];
+}
+
+function userTimezone(): string {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+}
+
+export async function fetchLibraryAlbums(
+  offset = 0,
+  limit = 30
+): Promise<{ albums: LibraryDateAlbum[]; hasMore: boolean }> {
+  const initData = telegramInitData();
+  if (!initData) {
+    throw new Error(
+      `Telegram did not provide Mini App auth data. ${telegramDiagnostics()}`
+    );
+  }
+
+  const params = new URLSearchParams({
+    timezone: userTimezone(),
+    offset: String(offset),
+    limit: String(limit)
+  });
+  const response = await fetch(`/api/miniapp/library/albums?${params}`, {
+    headers: {
+      "x-telegram-init-data": initData
+    }
+  });
+  const payload = (await response.json()) as AlbumsResponse;
+
+  if (!response.ok || !payload.ok) {
+    throw new Error(payload.error ?? "Unable to load Library albums.");
+  }
+
+  return {
+    albums: payload.albums ?? [],
+    hasMore: Boolean(payload.hasMore)
+  };
+}
+
+export async function fetchLibraryDateDownloads(
+  dateKey: string,
+  offset = 0,
+  limit = 20
+): Promise<{ downloads: LibraryDownload[]; hasMore: boolean }> {
+  const initData = telegramInitData();
+  if (!initData) {
+    throw new Error(
+      `Telegram did not provide Mini App auth data. ${telegramDiagnostics()}`
+    );
+  }
+
+  const params = new URLSearchParams({
+    timezone: userTimezone(),
+    offset: String(offset),
+    limit: String(limit)
+  });
+  const response = await fetch(
+    `/api/miniapp/library/albums/${encodeURIComponent(dateKey)}?${params}`,
+    {
+      headers: {
+        "x-telegram-init-data": initData
+      }
+    }
+  );
+  const payload = (await response.json()) as DateDownloadsResponse;
+
+  if (!response.ok || !payload.ok) {
+    throw new Error(payload.error ?? "Unable to load that album.");
+  }
+
+  return {
+    downloads: payload.downloads ?? [],
+    hasMore: Boolean(payload.hasMore)
+  };
 }
 
 export async function downloadInstagramUrl(url: string): Promise<DownloadResponse> {

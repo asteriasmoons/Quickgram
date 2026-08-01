@@ -19,3 +19,11 @@ export interface LibraryDownload {
   createdAt: string;
   media: LibraryMediaItem[];
 }
+
+export interface LibraryDateAlbum {
+  dateKey: string;
+  latestAt: string;
+  downloadCount: number;
+  mediaCount: number;
+  previewMedia: LibraryMediaItem[];
+}
