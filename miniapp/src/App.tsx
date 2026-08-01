@@ -88,12 +88,14 @@ function HomePage({ onOpenLibrary }: { onOpenLibrary: () => void }) {
   return (
     <main className="page home-page">
       <section className="home-hero">
-        <img
-          className="brand-mark"
-          src={`${import.meta.env.BASE_URL}logo.svg`}
-          alt="Quickgram"
-        />
-        <h1>Quickgram</h1>
+        <div className="brand-title-row">
+          <h1>Quickgram</h1>
+          <img
+            className="brand-mark"
+            src={`${import.meta.env.BASE_URL}logo.svg`}
+            alt="Quickgram"
+          />
+        </div>
         <p>Paste an Instagram post or reel URL and Quickgram will send the media to your Telegram chat.</p>
 
         <form className="download-form" onSubmit={handleSubmit}>

@@ -10,7 +10,7 @@
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   --telegram-safe-area-top: 0px;
-  --telegram-top-controls-height: 76px;
+  --telegram-top-controls-height: 56px;
 }
 
 * {
@@ -56,7 +56,7 @@ input {
   max-width: 720px;
   margin: 0 auto;
   padding: calc(var(--telegram-top-controls-height) + var(--telegram-safe-area-top))
-    16px calc(88px + env(safe-area-inset-bottom));
+    16px calc(82px + env(safe-area-inset-bottom));
 }
 
 .page {
@@ -68,14 +68,22 @@ input {
 .home-hero {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 10px 4px 20px;
+  gap: 14px;
+  padding: 4px 4px 20px;
+}
+
+.brand-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
 }
 
 .brand-mark {
-  width: 64px;
-  height: 64px;
-  border-radius: 18px;
+  width: 54px;
+  height: 54px;
+  flex: 0 0 auto;
+  border-radius: 16px;
   display: block;
   object-fit: cover;
   box-shadow: 0 20px 44px rgba(0, 0, 0, 0.28);
@@ -92,6 +100,10 @@ p {
   font-size: clamp(36px, 11vw, 58px);
   line-height: 0.95;
   letter-spacing: 0;
+}
+
+.home-hero h1 {
+  min-width: 0;
 }
 
 .home-hero p,
@@ -484,16 +496,16 @@ p {
   bottom: max(20px, env(safe-area-inset-bottom));
   left: 50%;
   z-index: 10;
-  width: calc(100% - 44px);
-  max-width: 560px;
-  height: 58px;
+  width: calc(100% - 56px);
+  max-width: 540px;
+  height: 54px;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 6px;
+  gap: 5px;
   margin: 0 auto;
-  padding: 6px;
+  padding: 5px;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 22px;
+  border-radius: 999px;
   background: rgba(16, 17, 21, 0.86);
   box-shadow: 0 22px 64px rgba(0, 0, 0, 0.34);
   transform: translateX(-50%);
@@ -506,7 +518,7 @@ p {
   justify-content: center;
   gap: 8px;
   border: 0;
-  border-radius: 16px;
+  border-radius: 999px;
   background: transparent;
   color: rgba(247, 242, 236, 0.62);
   font-size: 12px;
