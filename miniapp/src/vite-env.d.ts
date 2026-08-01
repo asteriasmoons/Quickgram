@@ -17,7 +17,18 @@ interface TelegramWebApp {
   };
   ready(): void;
   expand(): void;
+  isVersionAtLeast?(version: string): boolean;
   openLink?(url: string): void;
+  downloadFile?(
+    params: {
+      url: string;
+      file_name: string;
+    },
+    callback?: (accepted: boolean) => void
+  ): void;
+  HapticFeedback?: {
+    notificationOccurred(type: "error" | "success" | "warning"): void;
+  };
 }
 
 interface Window {

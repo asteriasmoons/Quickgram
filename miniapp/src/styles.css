@@ -454,7 +454,7 @@ p {
   width: min(100%, 680px);
   max-height: 100%;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
   gap: 12px;
 }
 
@@ -502,6 +502,18 @@ p {
   max-height: min(68svh, 680px);
   display: block;
   object-fit: contain;
+}
+
+.viewer-save-message {
+  margin: 0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(247, 242, 236, 0.82);
+  font-size: 13px;
+  line-height: 1.35;
+  text-align: center;
+  backdrop-filter: blur(16px);
 }
 
 @media (min-width: 680px) {

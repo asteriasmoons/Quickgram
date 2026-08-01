@@ -129,13 +129,13 @@ function EmptyLibrary() {
   );
 }
 
-function openSaveUrl(url: string) {
-  const webApp = window.Telegram?.WebApp;
-  if (webApp?.openLink) {
-    webApp.openLink(url);
-    return;
-  }
-  window.open(url, "_blank", "noopener,noreferrer");
+function absoluteMediaUrl(url: string): string {
+  return new URL(url, window.location.origin).toString();
+}
+
+function saveFileName(media: LibraryMediaItem): string {
+  const extension = media.mediaType === "video" ? "mp4" : "jpg";
+  return `quickgram-${media.id}.${extension}`;
 }
 
 function MediaViewer({
@@ -145,6 +145,38 @@ function MediaViewer({
   media: LibraryMediaItem;
   onClose: () => void;
 }) {
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+
+  function handleSave() {
+    const webApp = window.Telegram?.WebApp;
+
+    if (!webApp?.downloadFile) {
+      webApp?.HapticFeedback?.notificationOccurred("error");
+      setSaveMessage("Native save is not available in this Telegram version.");
+      return;
+    }
+
+    if (webApp.isVersionAtLeast && !webApp.isVersionAtLeast("8.0")) {
+      webApp.HapticFeedback?.notificationOccurred("error");
+      setSaveMessage("Update Telegram to use native saving from Mini Apps.");
+      return;
+    }
+
+    setSaveMessage("Opening Telegram save prompt...");
+    webApp.downloadFile(
+      {
+        url: absoluteMediaUrl(media.url),
+        file_name: saveFileName(media)
+      },
+      (accepted) => {
+        webApp.HapticFeedback?.notificationOccurred(accepted ? "success" : "warning");
+        setSaveMessage(
+          accepted ? "Telegram is saving the file." : "Save was cancelled."
+        );
+      }
+    );
+  }
+
   return (
     <div className="media-viewer" role="dialog" aria-modal="true">
       <button className="viewer-backdrop" type="button" aria-label="Close" onClick={onClose} />
@@ -156,7 +188,7 @@ function MediaViewer({
           <button
             className="viewer-save"
             type="button"
-            onClick={() => openSaveUrl(media.url)}
+            onClick={handleSave}
           >
             Save
           </button>
@@ -169,6 +201,8 @@ function MediaViewer({
             <img src={media.url} alt="Selected downloaded media" />
           )}
         </div>
+
+        {saveMessage && <p className="viewer-save-message">{saveMessage}</p>}
       </div>
     </div>
   );
