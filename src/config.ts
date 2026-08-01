@@ -60,8 +60,12 @@ export function logChannelId(): number | null {
 export function publicBaseUrl(): string {
   const configuredUrl = (process.env.WEBHOOK_BASE_URL ?? "").trim();
   const renderUrl = (process.env.RENDER_EXTERNAL_URL ?? "").trim();
-  const baseUrl =
-    configuredUrl || renderUrl || "https://quickgram-xgnu.onrender.com";
+  const baseUrl = configuredUrl || renderUrl;
+  if (!baseUrl) {
+    throw new Error(
+      "WEBHOOK_BASE_URL or RENDER_EXTERNAL_URL must be configured with the active Render service URL."
+    );
+  }
   return baseUrl.replace(/\/+$/, "");
 }
 

@@ -6,14 +6,43 @@ interface LibraryResponse {
   error?: string;
 }
 
+function initDataFromLocation(): string {
+  const searchParams = new URLSearchParams(window.location.search);
+  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  const encodedInitData =
+    searchParams.get("tgWebAppData") ?? hashParams.get("tgWebAppData");
+
+  return encodedInitData ? decodeURIComponent(encodedInitData) : "";
+}
+
 export function telegramInitData(): string {
-  return window.Telegram?.WebApp?.initData ?? "";
+  return window.Telegram?.WebApp?.initData || initDataFromLocation();
+}
+
+function telegramDiagnostics(): string {
+  const hasTelegramObject = Boolean(window.Telegram);
+  const hasWebApp = Boolean(window.Telegram?.WebApp);
+  const searchHasData = new URLSearchParams(window.location.search).has("tgWebAppData");
+  const hashHasData = new URLSearchParams(window.location.hash.replace(/^#/, "")).has(
+    "tgWebAppData"
+  );
+
+  return `Telegram object: ${hasTelegramObject ? "yes" : "no"}, WebApp: ${
+    hasWebApp ? "yes" : "no"
+  }, URL data: ${searchHasData || hashHasData ? "yes" : "no"}.`;
 }
 
 export async function fetchLibrary(): Promise<LibraryDownload[]> {
+  const initData = telegramInitData();
+  if (!initData) {
+    throw new Error(
+      `Telegram did not provide Mini App auth data. ${telegramDiagnostics()}`
+    );
+  }
+
   const response = await fetch("/api/miniapp/library", {
     headers: {
-      "x-telegram-init-data": telegramInitData()
+      "x-telegram-init-data": initData
     }
   });
   const payload = (await response.json()) as LibraryResponse;
