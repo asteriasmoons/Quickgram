@@ -10,11 +10,11 @@ export const navItems: NavItem[] = [
   {
     id: "home",
     label: "Home",
-    icon: "/miniapp/icons/home.svg"
+    icon: `${import.meta.env.BASE_URL}icons/home.svg`
   },
   {
     id: "library",
     label: "Library",
-    icon: "/miniapp/icons/library.svg"
+    icon: `${import.meta.env.BASE_URL}icons/library.svg`
   }
 ];

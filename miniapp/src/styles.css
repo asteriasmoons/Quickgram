@@ -10,7 +10,7 @@
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   --telegram-safe-area-top: 0px;
-  --telegram-top-controls-height: 84px;
+  --telegram-top-controls-height: 76px;
 }
 
 * {
@@ -55,8 +55,8 @@ input {
   min-height: 100svh;
   max-width: 720px;
   margin: 0 auto;
-  padding: calc(92px + var(--telegram-safe-area-top)) 16px
-    calc(98px + env(safe-area-inset-bottom));
+  padding: calc(var(--telegram-top-controls-height) + var(--telegram-safe-area-top))
+    16px calc(88px + env(safe-area-inset-bottom));
 }
 
 .page {
@@ -75,13 +75,9 @@ input {
 .brand-mark {
   width: 64px;
   height: 64px;
-  display: grid;
-  place-items: center;
   border-radius: 18px;
-  background: linear-gradient(145deg, #ff845d, #ffe06d 55%, #5ca6ff);
-  color: #15110d;
-  font-size: 30px;
-  font-weight: 900;
+  display: block;
+  object-fit: cover;
   box-shadow: 0 20px 44px rgba(0, 0, 0, 0.28);
 }
 
@@ -484,21 +480,23 @@ p {
 
 .bottom-nav {
   position: fixed;
-  right: 14px;
-  bottom: max(14px, env(safe-area-inset-bottom));
-  left: 14px;
+  right: auto;
+  bottom: max(20px, env(safe-area-inset-bottom));
+  left: 50%;
   z-index: 10;
-  max-width: 680px;
-  height: 72px;
+  width: calc(100% - 44px);
+  max-width: 560px;
+  height: 58px;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
+  gap: 6px;
   margin: 0 auto;
-  padding: 8px;
+  padding: 6px;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
+  border-radius: 22px;
   background: rgba(16, 17, 21, 0.86);
   box-shadow: 0 22px 64px rgba(0, 0, 0, 0.34);
+  transform: translateX(-50%);
   backdrop-filter: blur(22px);
 }
 
@@ -508,16 +506,16 @@ p {
   justify-content: center;
   gap: 8px;
   border: 0;
-  border-radius: 8px;
+  border-radius: 16px;
   background: transparent;
   color: rgba(247, 242, 236, 0.62);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 900;
 }
 
 .nav-icon {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   flex: 0 0 auto;
   background: currentColor;
   mask: var(--icon-url) center / contain no-repeat;

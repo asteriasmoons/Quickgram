@@ -75,6 +75,19 @@ export function miniAppUrl(): string {
   return configuredUrl || `${publicBaseUrl()}/miniapp`;
 }
 
+export function miniAppAllowedOrigin(): string {
+  const configuredOrigin = (process.env.MINIAPP_ALLOWED_ORIGIN ?? "").trim();
+  if (configuredOrigin) {
+    return configuredOrigin.replace(/\/+$/, "");
+  }
+
+  try {
+    return new URL(miniAppUrl()).origin;
+  } catch {
+    return "*";
+  }
+}
+
 export function webhookUrl(): string {
   return `${publicBaseUrl()}${WEBHOOK_PATH}`;
 }

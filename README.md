@@ -36,6 +36,7 @@ RENDER_EXTERNAL_URL=https://your-service.onrender.com
 TELEGRAM_WEBHOOK_SECRET=stable_secret
 FORCE_WEBHOOK_REFRESH=false
 MINIAPP_PUBLIC_URL=https://your-service.onrender.com/miniapp
+MINIAPP_ALLOWED_ORIGIN=https://your-miniapp-static-host.example
 PORT=10000
 ```
 
@@ -52,12 +53,10 @@ for authenticated Instagram requests, but preserving the username during the
 Render migration prevents accidental config loss.
 
 For the deployed Render service, `WEBHOOK_BASE_URL` must be the active Docker
-service URL, not an old suspended Python service URL. `MINIAPP_PUBLIC_URL` must
-match the same active service plus `/miniapp`.
+service URL, not an old suspended Python service URL.
 
 ```bash
 WEBHOOK_BASE_URL=https://your-active-service.onrender.com
-MINIAPP_PUBLIC_URL=https://your-active-service.onrender.com/miniapp
 FORCE_WEBHOOK_REFRESH=true
 ```
 
@@ -190,9 +189,36 @@ https://your-service.onrender.com/miniapp
 
 The bot also sends an `Open Quickgram` button from `/start`.
 
-If Telegram shows `This service has been suspended`, the Mini App URL is still
-pointing at a suspended Render service. Update both BotFather and the Render
-service env vars to the active Docker service URL.
+## Avoid Render Cold Starts for Mini App Opening
+
+Render Free web services spin down after idle time, so opening a Mini App hosted
+directly on Render can show Render's `Application Loading` wake screen. To avoid
+that, host `miniapp/dist` on a static host and keep Render only for the backend
+API.
+
+Build the Mini App for a root static host:
+
+```bash
+VITE_BASE_PATH=/ VITE_API_BASE_URL=https://your-render-backend.onrender.com npm --prefix miniapp run build
+```
+
+Deploy `miniapp/dist` to a static host. Then set:
+
+```bash
+MINIAPP_PUBLIC_URL=https://your-static-miniapp-host.example
+MINIAPP_ALLOWED_ORIGIN=https://your-static-miniapp-host.example
+WEBHOOK_BASE_URL=https://your-render-backend.onrender.com
+```
+
+In BotFather, set the Mini App/Web App URL to the static host:
+
+```text
+https://your-static-miniapp-host.example
+```
+
+The Mini App will open immediately from the static host. Library/download API
+requests may still wake the Render backend, but users will see Quickgram's UI
+instead of Render's loading page.
 
 ## Library Behavior
 

@@ -2,7 +2,7 @@ import { Readable } from "node:stream";
 import type { Bot } from "grammy";
 import type { Request, Response, Router } from "express";
 import express from "express";
-import { botToken, messages } from "../config.js";
+import { botToken, messages, publicBaseUrl } from "../config.js";
 import { buildCaption } from "../bot/caption.js";
 import { deliverInstagramMediaToChat } from "../bot/mediaDelivery.js";
 import {
@@ -67,7 +67,7 @@ function queryInteger(
 function mediaUrlBuilder(request: Request): (mediaId: string) => string {
   const initData = initDataFromRequest(request) ?? "";
   return (mediaId) =>
-    `/api/miniapp/media/${mediaId}?initData=${encodeURIComponent(initData)}`;
+    `${publicBaseUrl()}/api/miniapp/media/${mediaId}?initData=${encodeURIComponent(initData)}`;
 }
 
 function sendAuthError(response: Response, error: unknown): void {

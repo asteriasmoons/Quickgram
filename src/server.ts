@@ -12,6 +12,7 @@ import {
 } from "./config.js";
 import { createBot, expressWebhookCallback } from "./bot/index.js";
 import { createMiniAppRouter } from "./routes/miniapp.js";
+import { miniAppCors } from "./routes/cors.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -80,7 +81,7 @@ async function main(): Promise<void> {
   });
   app.post(WEBHOOK_PATH, expressWebhookCallback(bot));
 
-  app.use("/api/miniapp", createMiniAppRouter(bot));
+  app.use("/api/miniapp", miniAppCors, createMiniAppRouter(bot));
 
   const miniAppDist = path.resolve(__dirname, "../miniapp/dist");
   if (fs.existsSync(miniAppDist)) {

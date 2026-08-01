@@ -1,5 +1,14 @@
 import type { LibraryDateAlbum, LibraryDownload } from "./types";
 
+const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, "");
+
+function apiUrl(path: string): string {
+  if (!configuredApiBaseUrl) {
+    return path;
+  }
+  return `${configuredApiBaseUrl}${path}`;
+}
+
 interface LibraryResponse {
   ok: boolean;
   downloads?: LibraryDownload[];
@@ -61,7 +70,7 @@ export async function fetchLibrary(): Promise<LibraryDownload[]> {
     );
   }
 
-  const response = await fetch("/api/miniapp/library", {
+  const response = await fetch(apiUrl("/api/miniapp/library"), {
     headers: {
       "x-telegram-init-data": initData
     }
@@ -95,7 +104,7 @@ export async function fetchLibraryAlbums(
     offset: String(offset),
     limit: String(limit)
   });
-  const response = await fetch(`/api/miniapp/library/albums?${params}`, {
+  const response = await fetch(apiUrl(`/api/miniapp/library/albums?${params}`), {
     headers: {
       "x-telegram-init-data": initData
     }
@@ -130,7 +139,7 @@ export async function fetchLibraryDateDownloads(
     limit: String(limit)
   });
   const response = await fetch(
-    `/api/miniapp/library/albums/${encodeURIComponent(dateKey)}?${params}`,
+    apiUrl(`/api/miniapp/library/albums/${encodeURIComponent(dateKey)}?${params}`),
     {
       headers: {
         "x-telegram-init-data": initData
@@ -157,7 +166,7 @@ export async function downloadInstagramUrl(url: string): Promise<DownloadRespons
     );
   }
 
-  const response = await fetch("/api/miniapp/download", {
+  const response = await fetch(apiUrl("/api/miniapp/download"), {
     method: "POST",
     headers: {
       "content-type": "application/json",
