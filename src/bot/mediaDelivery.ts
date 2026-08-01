@@ -1,8 +1,9 @@
 import { InputFile, type Context } from "grammy";
 import type { Message } from "grammy/types";
 import {
-  CAROUSEL_CHUNK_SIZE,
   MEDIA_DOWNLOAD_HEADERS,
+  TELEGRAM_URL_SEND_TIMEOUT_MS,
+  TELEGRAM_UPLOAD_TIMEOUT_MS,
   TELEGRAM_UPLOAD_RETRIES
 } from "../config.js";
 import type { InstagramMediaLink } from "../instagram/types.js";
@@ -12,14 +13,24 @@ interface DownloadedMedia {
   type: "photo" | "video";
   inputFile: InputFile;
   filename: string;
+  size: number;
 }
 
 export interface DeliveredMediaItem extends SaveMediaInput {}
 
 interface TelegramSendApi {
-  sendPhoto(chatId: number, photo: InputFile, options?: unknown): Promise<Message>;
-  sendVideo(chatId: number, video: InputFile, options?: unknown): Promise<Message>;
-  sendMediaGroup(chatId: number, media: never): Promise<Message[]>;
+  sendPhoto(
+    chatId: number,
+    photo: InputFile | string,
+    options?: unknown,
+    signal?: AbortSignal
+  ): Promise<Message>;
+  sendVideo(
+    chatId: number,
+    video: InputFile | string,
+    options?: unknown,
+    signal?: AbortSignal
+  ): Promise<Message>;
 }
 
 async function downloadMediaFile(
@@ -45,7 +56,8 @@ async function downloadMediaFile(
   return {
     type: isVideo ? "video" : "photo",
     inputFile: new InputFile(buffer, filename),
-    filename
+    filename,
+    size: buffer.byteLength
   };
 }
 
@@ -99,33 +111,74 @@ function deliveredMediaFromMessage(
   return null;
 }
 
-async function sendMediaGroupWithRetry(
+async function sendSingleMediaWithRetry(
   api: TelegramSendApi,
   chatId: number,
-  mediaItems: DownloadedMedia[],
+  mediaLink: InstagramMediaLink,
+  shortcode: string,
   caption: string | undefined,
-  chunkNumber: number
-): Promise<Message[]> {
+  orderIndex: number
+): Promise<Message> {
   let lastError: unknown = null;
+  let downloadedMedia: DownloadedMedia | null = null;
+  const mediaType = mediaLink.type === "video" ? "video" : "photo";
+  const extension = mediaType === "video" ? "mp4" : "jpg";
+  const filename = `${shortcode}_${orderIndex + 1}.${extension}`;
 
   for (let attempt = 1; attempt <= TELEGRAM_UPLOAD_RETRIES; attempt += 1) {
+    const uploadMode = attempt === 1 ? "url" : "server-upload";
+
     try {
+      if (attempt > 1 && !downloadedMedia) {
+        console.log(
+          `Telegram URL send failed; downloading ${filename} to Render for fallback upload...`
+        );
+        downloadedMedia = await downloadMediaFile(mediaLink, shortcode, orderIndex);
+      }
+
+      const uploadSource =
+        attempt === 1 ? mediaLink.url : downloadedMedia?.inputFile;
+      if (!uploadSource) {
+        throw new Error("Fallback upload source is missing.");
+      }
+
       console.log(
-        `Uploading Telegram carousel chunk ${chunkNumber}, attempt ${attempt}/${TELEGRAM_UPLOAD_RETRIES}...`
+        `Sending Telegram media ${orderIndex + 1} (${filename}${
+          downloadedMedia ? `, ${downloadedMedia.size} bytes` : ""
+        }) via ${uploadMode}, attempt ${attempt}/${TELEGRAM_UPLOAD_RETRIES}...`
       );
-      return await api.sendMediaGroup(
-        chatId,
-        mediaItems.map((item, index) => ({
-          type: item.type,
-          media: item.inputFile,
-          ...(index === 0 && caption ? { caption } : {}),
-          ...(item.type === "video" ? { supports_streaming: true } : {})
-        })) as never
+
+      const signal = AbortSignal.timeout(
+        attempt === 1 ? TELEGRAM_URL_SEND_TIMEOUT_MS : TELEGRAM_UPLOAD_TIMEOUT_MS
       );
+      const message =
+        mediaType === "photo"
+          ? await api.sendPhoto(
+              chatId,
+              uploadSource,
+              {
+                ...(caption ? { caption } : {})
+              },
+              signal
+            )
+          : await api.sendVideo(
+              chatId,
+              uploadSource,
+              {
+                ...(caption ? { caption } : {}),
+                supports_streaming: true
+              },
+              signal
+            );
+
+      console.log(
+        `Telegram media ${orderIndex + 1} sent successfully via ${uploadMode}.`
+      );
+      return message;
     } catch (error) {
       lastError = error;
       console.log(
-        `Telegram carousel chunk ${chunkNumber} upload attempt ${attempt} failed: ${
+        `Telegram media ${orderIndex + 1} ${uploadMode} attempt ${attempt} failed: ${
           error instanceof Error ? `${error.name}: ${error.message}` : String(error)
         }`
       );
@@ -146,64 +199,25 @@ export async function deliverInstagramMediaToChat(
   shortcode: string,
   caption: string
 ): Promise<DeliveredMediaItem[]> {
-  const downloadedMedia: DownloadedMedia[] = [];
-
-  for (const [index, item] of mediaLinks.entries()) {
-    console.log(
-      `Downloading Instagram media ${index + 1}/${mediaLinks.length} to the server...`
-    );
-    downloadedMedia.push(await downloadMediaFile(item, shortcode, index));
-  }
-
   const delivered: DeliveredMediaItem[] = [];
 
-  if (downloadedMedia.length === 1) {
-    const media = downloadedMedia[0];
-    if (!media) {
-      return delivered;
-    }
+  for (const [index, media] of mediaLinks.entries()) {
+    const message = await sendSingleMediaWithRetry(
+      api,
+      chatId,
+      media,
+      shortcode,
+      index === 0 ? caption : undefined,
+      index
+    );
 
-    const message =
-      media.type === "photo"
-        ? await api.sendPhoto(chatId, media.inputFile, {
-            caption
-          })
-        : await api.sendVideo(chatId, media.inputFile, {
-            caption,
-            supports_streaming: true
-          });
-
-    const item = deliveredMediaFromMessage(message, media.type, 0);
-    if (item) {
-      delivered.push(item);
-    }
-  } else {
-    let chunkNumber = 0;
-    for (let start = 0; start < downloadedMedia.length; start += CAROUSEL_CHUNK_SIZE) {
-      chunkNumber += 1;
-      const chunk = downloadedMedia.slice(start, start + CAROUSEL_CHUNK_SIZE);
-      const messages = await sendMediaGroupWithRetry(
-        api,
-        chatId,
-        chunk,
-        start === 0 ? caption : undefined,
-        chunkNumber
-      );
-
-      for (const [index, message] of messages.entries()) {
-        const original = chunk[index];
-        if (!original) {
-          continue;
-        }
-        const deliveredItem = deliveredMediaFromMessage(
-          message,
-          original.type,
-          start + index
-        );
-        if (deliveredItem) {
-          delivered.push(deliveredItem);
-        }
-      }
+    const deliveredItem = deliveredMediaFromMessage(
+      message,
+      media.type === "video" ? "video" : "photo",
+      index
+    );
+    if (deliveredItem) {
+      delivered.push(deliveredItem);
     }
   }
 

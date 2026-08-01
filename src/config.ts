@@ -21,7 +21,8 @@ export const ALLOWED_UPDATES = [
 
 export const WEBHOOK_PATH = "/telegram/webhook";
 export const WEBHOOK_MAX_CONNECTIONS = 20;
-export const TELEGRAM_UPLOAD_TIMEOUT_MS = 300_000;
+export const TELEGRAM_URL_SEND_TIMEOUT_MS = 25_000;
+export const TELEGRAM_UPLOAD_TIMEOUT_MS = 90_000;
 export const TELEGRAM_UPLOAD_RETRIES = 3;
 export const CAROUSEL_CHUNK_SIZE = 2;
 
