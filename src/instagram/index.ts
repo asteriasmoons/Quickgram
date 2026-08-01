@@ -10,7 +10,7 @@ const METHOD_ALIASES: Record<string, "mobile_api" | "gallery_dl"> = {
 };
 
 function selectedMethod(): "mobile_api" | "gallery_dl" {
-  const rawMethod = (process.env.INSTAGRAM_DOWNLOADER_METHOD ?? "mobile_api")
+  const rawMethod = (process.env.INSTAGRAM_DOWNLOADER_METHOD ?? "gallery-dl")
     .trim()
     .toLowerCase();
   const method = METHOD_ALIASES[rawMethod];

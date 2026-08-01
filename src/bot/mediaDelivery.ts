@@ -3,8 +3,7 @@ import type { Message } from "grammy/types";
 import {
   CAROUSEL_CHUNK_SIZE,
   MEDIA_DOWNLOAD_HEADERS,
-  TELEGRAM_UPLOAD_RETRIES,
-  TELEGRAM_UPLOAD_TIMEOUT_MS
+  TELEGRAM_UPLOAD_RETRIES
 } from "../config.js";
 import type { InstagramMediaLink } from "../instagram/types.js";
 import type { SaveMediaInput } from "../db/libraryRepository.js";
@@ -16,6 +15,12 @@ interface DownloadedMedia {
 }
 
 export interface DeliveredMediaItem extends SaveMediaInput {}
+
+interface TelegramSendApi {
+  sendPhoto(chatId: number, photo: InputFile, options?: unknown): Promise<Message>;
+  sendVideo(chatId: number, video: InputFile, options?: unknown): Promise<Message>;
+  sendMediaGroup(chatId: number, media: never): Promise<Message[]>;
+}
 
 async function downloadMediaFile(
   item: InstagramMediaLink,
@@ -95,7 +100,7 @@ function deliveredMediaFromMessage(
 }
 
 async function sendMediaGroupWithRetry(
-  ctx: Context,
+  api: TelegramSendApi,
   chatId: number,
   mediaItems: DownloadedMedia[],
   caption: string | undefined,
@@ -108,7 +113,7 @@ async function sendMediaGroupWithRetry(
       console.log(
         `Uploading Telegram carousel chunk ${chunkNumber}, attempt ${attempt}/${TELEGRAM_UPLOAD_RETRIES}...`
       );
-      return await ctx.api.sendMediaGroup(
+      return await api.sendMediaGroup(
         chatId,
         mediaItems.map((item, index) => ({
           type: item.type,
@@ -134,16 +139,13 @@ async function sendMediaGroupWithRetry(
   throw lastError instanceof Error ? lastError : new Error(String(lastError));
 }
 
-export async function deliverInstagramMedia(
-  ctx: Context,
+export async function deliverInstagramMediaToChat(
+  api: TelegramSendApi,
+  chatId: number,
   mediaLinks: InstagramMediaLink[],
   shortcode: string,
   caption: string
 ): Promise<DeliveredMediaItem[]> {
-  if (!ctx.chat) {
-    throw new Error("Cannot deliver media without a chat.");
-  }
-
   const downloadedMedia: DownloadedMedia[] = [];
 
   for (const [index, item] of mediaLinks.entries()) {
@@ -163,10 +165,10 @@ export async function deliverInstagramMedia(
 
     const message =
       media.type === "photo"
-        ? await ctx.replyWithPhoto(media.inputFile, {
+        ? await api.sendPhoto(chatId, media.inputFile, {
             caption
           })
-        : await ctx.replyWithVideo(media.inputFile, {
+        : await api.sendVideo(chatId, media.inputFile, {
             caption,
             supports_streaming: true
           });
@@ -181,8 +183,8 @@ export async function deliverInstagramMedia(
       chunkNumber += 1;
       const chunk = downloadedMedia.slice(start, start + CAROUSEL_CHUNK_SIZE);
       const messages = await sendMediaGroupWithRetry(
-        ctx,
-        ctx.chat.id,
+        api,
+        chatId,
         chunk,
         start === 0 ? caption : undefined,
         chunkNumber
@@ -206,4 +208,23 @@ export async function deliverInstagramMedia(
   }
 
   return delivered;
+}
+
+export async function deliverInstagramMedia(
+  ctx: Context,
+  mediaLinks: InstagramMediaLink[],
+  shortcode: string,
+  caption: string
+): Promise<DeliveredMediaItem[]> {
+  if (!ctx.chat) {
+    throw new Error("Cannot deliver media without a chat.");
+  }
+
+  return deliverInstagramMediaToChat(
+    ctx.api as unknown as TelegramSendApi,
+    ctx.chat.id,
+    mediaLinks,
+    shortcode,
+    caption
+  );
 }

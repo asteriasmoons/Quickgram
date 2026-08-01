@@ -20,7 +20,7 @@ Current project variables:
 ```bash
 BEST_INSTAGRAM_DOWNLOADER_BOT_API=your_telegram_bot_token
 INSTAGRAM_DOWNLOADER_LOG_CHANNEL_ID=-1001234567890
-INSTAGRAM_DOWNLOADER_METHOD=mobile_api
+INSTAGRAM_DOWNLOADER_METHOD=gallery-dl
 INSTAGRAM_SESSIONID=instagram_session_cookie
 INSTAGRAM_USERNAME=instagram_username
 DATABASE_URL=postgresql://...

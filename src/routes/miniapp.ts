@@ -2,9 +2,17 @@ import { Readable } from "node:stream";
 import type { Bot } from "grammy";
 import type { Request, Response, Router } from "express";
 import express from "express";
-import { botToken } from "../config.js";
-import { findOwnedMedia, listLibraryDownloads } from "../db/libraryRepository.js";
+import { botToken, messages } from "../config.js";
+import { buildCaption } from "../bot/caption.js";
+import { deliverInstagramMediaToChat } from "../bot/mediaDelivery.js";
+import {
+  findOwnedMedia,
+  listLibraryDownloads,
+  saveDownload
+} from "../db/libraryRepository.js";
 import { hasDatabaseConfig } from "../db/pool.js";
+import { getInstagramMediaLinks } from "../instagram/index.js";
+import { getPostOrReelShortcodeFromLink } from "../instagram/shortcode.js";
 import { validateTelegramInitData } from "../telegram/auth.js";
 import { resolveTelegramFileUrl } from "../telegram/files.js";
 
@@ -30,6 +38,11 @@ function authenticateMiniApp(request: Request): number {
   return validateTelegramInitData(initData).user.id;
 }
 
+function requestUrl(request: Request): string | null {
+  const body = request.body as { url?: unknown } | undefined;
+  return typeof body?.url === "string" ? body.url.trim() : null;
+}
+
 function sendAuthError(response: Response, error: unknown): void {
   response.status(401).json({
     ok: false,
@@ -39,6 +52,102 @@ function sendAuthError(response: Response, error: unknown): void {
 
 export function createMiniAppRouter(bot: Bot): Router {
   const router = express.Router();
+
+  router.post("/download", async (request, response) => {
+    let telegramUserId: number;
+    try {
+      telegramUserId = authenticateMiniApp(request);
+    } catch (error) {
+      sendAuthError(response, error);
+      return;
+    }
+
+    const sourceUrl = requestUrl(request);
+    if (!sourceUrl) {
+      response.status(400).json({
+        ok: false,
+        error: "Paste an Instagram post or reel URL."
+      });
+      return;
+    }
+
+    const shortcode = getPostOrReelShortcodeFromLink(sourceUrl);
+    if (!shortcode) {
+      response.status(400).json({
+        ok: false,
+        error: "That does not look like an Instagram post or reel URL."
+      });
+      return;
+    }
+
+    try {
+      const { mediaLinks, caption } = await getInstagramMediaLinks(shortcode);
+      if (!mediaLinks.length) {
+        throw new Error("Instagram returned no media.");
+      }
+
+      const finalCaption = buildCaption(caption);
+      const deliveredMedia = await deliverInstagramMediaToChat(
+        bot.api as never,
+        telegramUserId,
+        mediaLinks,
+        shortcode,
+        finalCaption
+      );
+
+      if (hasDatabaseConfig() && deliveredMedia.length) {
+        try {
+          await saveDownload({
+            telegramUserId,
+            chatId: telegramUserId,
+            sourceUrl,
+            shortcode,
+            caption: finalCaption,
+            media: deliveredMedia
+          });
+        } catch (saveError) {
+          console.log(
+            `Library save failed after Mini App delivery: ${
+              saveError instanceof Error
+                ? `${saveError.name}: ${saveError.message}`
+                : String(saveError)
+            }`
+          );
+        }
+      }
+
+      await bot.api
+        .sendMessage(telegramUserId, messages.end, {
+          link_preview_options: { is_disabled: true }
+        })
+        .catch((closingError) => {
+          console.log(
+            `Mini App closing message failed after successful delivery: ${
+              closingError instanceof Error
+                ? `${closingError.name}: ${closingError.message}`
+                : String(closingError)
+            }`
+          );
+        });
+
+      response.json({
+        ok: true,
+        shortcode,
+        deliveredCount: deliveredMedia.length
+      });
+    } catch (error) {
+      console.log(
+        `Mini App download failed for user ${telegramUserId}: ${
+          error instanceof Error ? `${error.name}: ${error.message}` : String(error)
+        }`
+      );
+      response.status(500).json({
+        ok: false,
+        error:
+          "The download was not successful. Make sure you have started the bot, then try again."
+      });
+    }
+  });
 
   router.get("/library", async (request, response) => {
     if (!hasDatabaseConfig()) {

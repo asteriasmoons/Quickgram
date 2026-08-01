@@ -1,5 +1,11 @@
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
-import { fetchLibrary, telegramInitData } from "./api";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+  type FormEvent
+} from "react";
+import { downloadInstagramUrl, fetchLibrary, telegramInitData } from "./api";
 import { navItems } from "./nav";
 import type { LibraryDownload, TabId } from "./types";
 import "./styles.css";
@@ -15,26 +21,82 @@ function formatDate(value: string): string {
 
 function HomePage({ onOpenLibrary }: { onOpenLibrary: () => void }) {
   const isTelegram = Boolean(telegramInitData());
+  const [url, setUrl] = useState("");
+  const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">(
+    "idle"
+  );
+  const [message, setMessage] = useState<string | null>(null);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const trimmedUrl = url.trim();
+    if (!trimmedUrl) {
+      setStatus("error");
+      setMessage("Paste an Instagram post or reel URL.");
+      return;
+    }
+
+    setStatus("submitting");
+    setMessage("Downloading and sending it to your Telegram chat...");
+
+    try {
+      const result = await downloadInstagramUrl(trimmedUrl);
+      setStatus("success");
+      setMessage(
+        `Sent ${result.deliveredCount ?? 0} item${
+          result.deliveredCount === 1 ? "" : "s"
+        } to Telegram.`
+      );
+      setUrl("");
+    } catch (error) {
+      setStatus("error");
+      setMessage(error instanceof Error ? error.message : "Unable to download that URL.");
+    }
+  }
 
   return (
     <main className="page home-page">
       <section className="home-hero">
         <div className="brand-mark">Q</div>
         <h1>Quickgram</h1>
-        <p>
-          Send an Instagram post or reel to the bot. The media you receive will
-          appear here automatically.
-        </p>
-        <button className="primary-action" type="button" onClick={onOpenLibrary}>
-          Open Library
-        </button>
+        <p>Paste an Instagram post or reel URL and Quickgram will send the media to your Telegram chat.</p>
+
+        <form className="download-form" onSubmit={handleSubmit}>
+          <input
+            aria-label="Instagram URL"
+            inputMode="url"
+            placeholder="https://www.instagram.com/p/..."
+            type="url"
+            value={url}
+            onChange={(event) => setUrl(event.target.value)}
+          />
+          <button
+            className="primary-action"
+            disabled={status === "submitting"}
+            type="submit"
+          >
+            {status === "submitting" ? "Downloading..." : "Download"}
+          </button>
+        </form>
+
+        {message && (
+          <div className={status === "error" ? "status-message error" : "status-message"}>
+            {message}
+          </div>
+        )}
+
+        {status === "success" && (
+          <button className="secondary-action" type="button" onClick={onOpenLibrary}>
+            View Library
+          </button>
+        )}
       </section>
 
       <section className="home-steps" aria-label="Quickgram flow">
         <article>
           <span>1</span>
-          <strong>Send a link</strong>
-          <p>Paste an Instagram post or reel into the Telegram chat.</p>
+          <strong>Paste a link</strong>
+          <p>Use the input above for any Instagram post or reel URL.</p>
         </article>
         <article>
           <span>2</span>

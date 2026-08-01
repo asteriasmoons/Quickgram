@@ -6,6 +6,13 @@ interface LibraryResponse {
   error?: string;
 }
 
+interface DownloadResponse {
+  ok: boolean;
+  shortcode?: string;
+  deliveredCount?: number;
+  error?: string;
+}
+
 function initDataFromLocation(): string {
   const searchParams = new URLSearchParams(window.location.search);
   const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
@@ -52,4 +59,29 @@ export async function fetchLibrary(): Promise<LibraryDownload[]> {
   }
 
   return payload.downloads ?? [];
+}
+
+export async function downloadInstagramUrl(url: string): Promise<DownloadResponse> {
+  const initData = telegramInitData();
+  if (!initData) {
+    throw new Error(
+      `Telegram did not provide Mini App auth data. ${telegramDiagnostics()}`
+    );
+  }
+
+  const response = await fetch("/api/miniapp/download", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-telegram-init-data": initData
+    },
+    body: JSON.stringify({ url })
+  });
+  const payload = (await response.json()) as DownloadResponse;
+
+  if (!response.ok || !payload.ok) {
+    throw new Error(payload.error ?? "Unable to download that URL.");
+  }
+
+  return payload;
 }

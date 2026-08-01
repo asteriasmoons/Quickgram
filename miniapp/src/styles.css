@@ -100,6 +100,67 @@ p {
   font-weight: 800;
 }
 
+.primary-action:disabled {
+  cursor: wait;
+  opacity: 0.62;
+}
+
+.secondary-action {
+  width: fit-content;
+  min-height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  padding: 0 18px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f7f2ec;
+  font-weight: 800;
+}
+
+.download-form {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+}
+
+.download-form input {
+  width: 100%;
+  min-height: 52px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  padding: 0 14px;
+  background: rgba(255, 255, 255, 0.09);
+  color: #fff8f2;
+  font: inherit;
+  font-size: 15px;
+  outline: none;
+}
+
+.download-form input::placeholder {
+  color: rgba(247, 242, 236, 0.42);
+}
+
+.download-form input:focus {
+  border-color: rgba(255, 224, 109, 0.72);
+  box-shadow: 0 0 0 3px rgba(255, 224, 109, 0.12);
+}
+
+.status-message {
+  width: 100%;
+  border: 1px solid rgba(138, 210, 137, 0.28);
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: rgba(86, 161, 91, 0.16);
+  color: #c8f0c3;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.status-message.error {
+  border-color: rgba(255, 123, 109, 0.35);
+  background: rgba(255, 123, 109, 0.12);
+  color: #ffb8ae;
+}
+
 .home-steps,
 .download-card,
 .empty-state,

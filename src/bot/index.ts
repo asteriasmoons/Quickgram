@@ -1,6 +1,5 @@
 import { Bot, InlineKeyboard, webhookCallback, type Context } from "grammy";
 import {
-  BOT_USERNAME,
   INSTA_POST_OR_REEL_REGEX,
   SPOTIFY_LINK_REGEX,
   botToken,
@@ -13,20 +12,12 @@ import { getInstagramMediaLinks } from "../instagram/index.js";
 import { getPostOrReelShortcodeFromLink } from "../instagram/shortcode.js";
 import { botLogPrefix, log } from "./logging.js";
 import { deliverInstagramMedia } from "./mediaDelivery.js";
+import { buildCaption } from "./caption.js";
 
-const captionTrail = `\n\n\n${BOT_USERNAME}`;
 const noPreview = { link_preview_options: { is_disabled: true } } as const;
 
 function startKeyboard(): InlineKeyboard {
   return new InlineKeyboard().webApp("Open Quickgram", miniAppUrl());
-}
-
-function buildCaption(caption: string): string {
-  let trimmedCaption = caption || "";
-  while (trimmedCaption.length + captionTrail.length > 1024) {
-    trimmedCaption = trimmedCaption.slice(0, -1);
-  }
-  return `${trimmedCaption}${captionTrail}`;
 }
 
 async function tryToDeleteMessage(
