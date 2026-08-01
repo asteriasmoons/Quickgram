@@ -10,7 +10,7 @@
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   --telegram-safe-area-top: 0px;
-  --telegram-top-controls-height: 124px;
+  --telegram-top-controls-height: 84px;
 }
 
 * {
@@ -55,7 +55,7 @@ input {
   min-height: 100svh;
   max-width: 720px;
   margin: 0 auto;
-  padding: calc(148px + var(--telegram-safe-area-top)) 16px
+  padding: calc(92px + var(--telegram-safe-area-top)) 16px
     calc(98px + env(safe-area-inset-bottom));
 }
 
@@ -66,12 +66,10 @@ input {
 }
 
 .home-hero {
-  min-height: 46svh;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
   gap: 16px;
-  padding: 30px 4px;
+  padding: 10px 4px 20px;
 }
 
 .brand-mark {
@@ -436,7 +434,7 @@ p {
   z-index: 40;
   display: grid;
   place-items: center;
-  padding: calc(118px + var(--telegram-safe-area-top)) 14px
+  padding: calc(92px + var(--telegram-safe-area-top)) 14px
     calc(92px + env(safe-area-inset-bottom));
 }
 
