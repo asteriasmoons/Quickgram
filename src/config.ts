@@ -117,9 +117,9 @@ For support, contact @asteriasmoons.`,
 
 This bot stores Telegram media file IDs for downloads you successfully receive so your Mini App Library can show them later. Your Instagram links are used to process requested downloads.`,
   end: `If you like the bot, you can support it by starring the project on GitHub:
-https://github.com/asteriasmoons/instagram-downloader
+https://github.com/asteriasmoons/Quickgram
 
-You can also check out @lystaria_bot.`,
+You can also check out @voxappsupdates to check out iOS apps for reading, reminders and habits, health, wellness, journaling and spirituality or visit the website at https://docs.voxiverse.ink.`,
   fail: "Sorry, the download was not successful. Please try again later or use another link.",
   wrongPattern: "Wrong pattern.\nPlease send an Instagram post or reel link.",
   spotify:
