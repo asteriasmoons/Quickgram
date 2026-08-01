@@ -7,7 +7,7 @@ import {
 } from "react";
 import { downloadInstagramUrl, fetchLibrary, telegramInitData } from "./api";
 import { navItems } from "./nav";
-import type { LibraryDownload, TabId } from "./types";
+import type { LibraryDownload, LibraryMediaItem, TabId } from "./types";
 import "./styles.css";
 
 function formatDate(value: string): string {
@@ -129,7 +129,58 @@ function EmptyLibrary() {
   );
 }
 
-function LibraryMedia({ download }: { download: LibraryDownload }) {
+function openSaveUrl(url: string) {
+  const webApp = window.Telegram?.WebApp;
+  if (webApp?.openLink) {
+    webApp.openLink(url);
+    return;
+  }
+  window.open(url, "_blank", "noopener,noreferrer");
+}
+
+function MediaViewer({
+  media,
+  onClose
+}: {
+  media: LibraryMediaItem;
+  onClose: () => void;
+}) {
+  return (
+    <div className="media-viewer" role="dialog" aria-modal="true">
+      <button className="viewer-backdrop" type="button" aria-label="Close" onClick={onClose} />
+      <div className="viewer-panel">
+        <header className="viewer-header">
+          <button className="viewer-close" type="button" onClick={onClose}>
+            Close
+          </button>
+          <button
+            className="viewer-save"
+            type="button"
+            onClick={() => openSaveUrl(media.url)}
+          >
+            Save
+          </button>
+        </header>
+
+        <div className="viewer-media-frame">
+          {media.mediaType === "video" ? (
+            <video src={media.url} controls autoPlay playsInline />
+          ) : (
+            <img src={media.url} alt="Selected downloaded media" />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LibraryMedia({
+  download,
+  onSelectMedia
+}: {
+  download: LibraryDownload;
+  onSelectMedia: (media: LibraryMediaItem) => void;
+}) {
   return (
     <article className="download-card">
       <header className="download-header">
@@ -142,13 +193,21 @@ function LibraryMedia({ download }: { download: LibraryDownload }) {
 
       <div className="media-grid">
         {download.media.map((item) => (
-          <div className="media-frame" key={item.id}>
+          <button
+            className="media-frame"
+            key={item.id}
+            type="button"
+            onClick={() => onSelectMedia(item)}
+          >
             {item.mediaType === "video" ? (
-              <video src={item.url} controls preload="metadata" playsInline />
+              <>
+                <video src={item.url} preload="metadata" playsInline />
+                <span className="video-marker">Video</span>
+              </>
             ) : (
               <img src={item.url} alt={`Downloaded Instagram media ${item.orderIndex + 1}`} />
             )}
-          </div>
+          </button>
         ))}
       </div>
 
@@ -159,6 +218,7 @@ function LibraryMedia({ download }: { download: LibraryDownload }) {
 
 function LibraryPage() {
   const [downloads, setDownloads] = useState<LibraryDownload[]>([]);
+  const [selectedMedia, setSelectedMedia] = useState<LibraryMediaItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -204,9 +264,17 @@ function LibraryPage() {
       {!loading && !error && downloads.length > 0 && (
         <section className="download-list">
           {downloads.map((download) => (
-            <LibraryMedia key={download.id} download={download} />
+            <LibraryMedia
+              key={download.id}
+              download={download}
+              onSelectMedia={setSelectedMedia}
+            />
           ))}
         </section>
+      )}
+
+      {selectedMedia && (
+        <MediaViewer media={selectedMedia} onClose={() => setSelectedMedia(null)} />
       )}
     </main>
   );
@@ -246,6 +314,14 @@ export default function App() {
 
   useEffect(() => {
     const webApp = window.Telegram?.WebApp;
+    const topInset = Math.max(
+      webApp?.safeAreaInset?.top ?? 0,
+      webApp?.contentSafeAreaInset?.top ?? 0
+    );
+    document.documentElement.style.setProperty(
+      "--telegram-safe-area-top",
+      `${topInset}px`
+    );
     webApp?.ready();
     webApp?.expand();
   }, []);
